@@ -2,7 +2,7 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses [Semantic Versioning](https://semver.org/).
 
-## [0.1.0] — 2026-11-14
+## [0.1.0] — 2026-11-15
 
 First public MVP.
 
@@ -12,7 +12,7 @@ First public MVP.
 - Processing stages:
   - DeepFilterNet3 AI noise reduction (ONNX Runtime port, verified against the official implementation).
   - Music-safe spectral de-hiss.
-  - AR declipping.
+  - AR declipping, with a plausibility bound that discards runaway reconstructions.
   - DSP bandwidth extension (spectral band replication) with automatic upsampling of low-rate audio to 48 kHz.
   - Experimental vocal clarity.
 - Presets: Music, Vocals, Restoration, Custom.
@@ -29,3 +29,5 @@ First public MVP.
 - macOS and Linux builds are not yet hand-verified; installers are not code-signed.
 - No neural super-resolution model yet (bandwidth extension is DSP).
 - Clipping that was later lossy-encoded is not reliably detected.
+
+[0.1.0]: https://github.com/Layfate/Resona/releases/tag/v0.1.0

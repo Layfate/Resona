@@ -11,8 +11,13 @@
 
 <p align="center">
   <a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/badge/license-MIT-2aa198"></a>
-  <img alt="Version 0.1.0" src="https://img.shields.io/badge/version-0.1.0-b58900">
+  <a href="https://github.com/Layfate/Resona/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/Layfate/Resona?color=b58900"></a>
+  <a href="https://github.com/Layfate/Resona/actions/workflows/ci.yml"><img alt="CI status" src="https://github.com/Layfate/Resona/actions/workflows/ci.yml/badge.svg"></a>
   <img alt="Tauri 2" src="https://img.shields.io/badge/Tauri-2-268bd2">
+</p>
+
+<p align="center">
+  <a href="https://github.com/Layfate/Resona/releases/latest"><b>⬇ Download for Windows, macOS and Linux</b></a>
 </p>
 
 <p align="center">
@@ -74,7 +79,7 @@ Resona is a desktop app in the spirit of [Upscayl](https://github.com/upscayl/up
 
 ## Install
 
-Download the installer for your platform from the [Releases](../../releases) page:
+Download the installer for your platform from the [Releases](https://github.com/Layfate/Resona/releases/latest) page:
 
 | Platform | File |
 |---|---|
@@ -156,6 +161,7 @@ DeepFilterNet3 is a small recurrent network (about 12,000 sequential GRU steps f
 ## Limitations
 
 - **Lost information stays lost.** Bandwidth extension *synthesises* high frequencies from the octave below. It sounds like "air", but it is not the original recording's content.
+- **Heavy clipping is only partly repaired.** Light clipping (peaks cut by about 1–2 dB) is rebuilt closely. When peaks were cut by 4 dB or more, the declipper still removes the flat tops, but on dense music the waveform it rebuilds is only slightly closer to the original. Speech holds up better.
 - **Clipping hidden by lossy encoding** (a clipped master that was later saved as MP3) cannot be detected reliably, because encoder ripple breaks the flat tops. Declipping is reliable on WAV/FLAC.
 - **DeepFilterNet3 is trained on speech.** On full mixes it treats instruments as noise, so the *Music* preset uses the music-safe DSP denoiser by default.
 - **Vocal clarity** assumes a centred lead vocal and is experimental.
