@@ -137,7 +137,15 @@ def _interpolate(win: np.ndarray, unknown: np.ndarray, a: np.ndarray) -> np.ndar
 
 
 def declip_channel(x: np.ndarray, order: int = 32, iterations: int = 4, max_run: int = 600,
+                   max_overshoot: float = 3.0,
                    on_progress: Callable[[float], None] | None = None) -> tuple[np.ndarray, int]:
+    """Repair clipped runs in one channel; returns (audio, repaired sample count).
+
+    ``max_overshoot`` bounds a plausible estimate to that multiple of the clip
+    level (3.0 ≈ +9.5 dB). Near-unstable AR models occasionally interpolate a
+    run into a spike far beyond any real peak; such an estimate is discarded
+    and the last consistent one (or the clipped original) is kept.
+    """
     mask, hi, lo = clip_mask(x)
     starts, ends = _runs(mask)
     if len(starts) == 0:
@@ -175,11 +183,12 @@ def declip_channel(x: np.ndarray, order: int = 32, iterations: int = 4, max_run:
         if not coefs:
             continue
         a = np.mean(coefs, axis=0)
+        bound = max_overshoot * max(abs(hi), abs(lo))
         free = unknown.copy()
         ok = False
         for it in range(iterations):
             est = _interpolate(win, free, a)
-            if est is None or not np.all(np.isfinite(est)):
+            if est is None or not np.all(np.isfinite(est)) or np.max(np.abs(est)) > bound:
                 break
             win[free] = est
             ok = True

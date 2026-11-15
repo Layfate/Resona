@@ -131,6 +131,34 @@ def test_declip_detects_and_improves_snr():
     assert np.array_equal(restored[0][~mask], clipped[0][~mask])
 
 
+def _chord_attack(sr=44100, seconds=0.4):
+    """Harmonic-rich chord attack (F major, ~40 partials each, fast decay)."""
+    t = np.arange(int(sr * seconds)) / sr
+    env = np.minimum(1, t / 0.02) * np.exp(-t * 0.6)
+    x = np.zeros_like(t)
+    for k, f in enumerate((174.61, 220.0, 261.63)):
+        for h in range(1, 40):
+            if f * h > 20000:
+                break
+            x += 0.5 / h**1.1 * (0.5 + 0.3 * np.sin(k + h)) * np.sin(2 * np.pi * f * h * t + h) * env
+    return (x / np.max(np.abs(x))).astype(np.float32)
+
+
+def test_declip_never_spikes_far_beyond_true_peak():
+    # Regression: a near-unstable AR model used to turn one clipped run of this
+    # signal into a spike at the 4x safety clamp (true peak 1.4x), which the
+    # limiter then had to squash, damaging the whole file.
+    clean = _chord_attack()
+    gain = 10 ** (3 / 20)
+    ref = clean * gain * 0.99
+    clipped = (np.clip(clean * gain, -1, 1) * 0.99).astype(np.float32)
+    restored, n = declip.declip_channel(clipped)
+    assert n > 0
+    assert np.max(np.abs(restored)) < 1.5 * np.max(np.abs(ref))
+    mask, _, _ = declip.clip_mask(clipped)
+    assert np.sum((restored[mask] - ref[mask]) ** 2) < np.sum((clipped[mask] - ref[mask]) ** 2)
+
+
 def test_declip_no_op_on_clean_audio():
     clean = _music_like() * 0.8
     out, n = declip.declip(clean)
