@@ -1,0 +1,4 @@
+# Shared, pure-Python-ABI dependencies of the Resona worker.
+numpy>=1.26,<3
+scipy>=1.11,<2
+soundfile>=0.12.1,<1

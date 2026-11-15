@@ -1,0 +1,72 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Resona",
+  "version": "0.1.0",
+  "identifier": "io.github.resona",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Resona",
+        "width": 1320,
+        "height": 860,
+        "minWidth": 980,
+        "minHeight": 640,
+        "center": true,
+        "backgroundColor": "#002b36",
+        "dragDropEnabled": true
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: asset: http://asset.localhost; font-src 'self' data:; media-src 'self' blob: asset: http://asset.localhost; connect-src 'self' ipc: http://ipc.localhost asset: http://asset.localhost",
+      "assetProtocol": {
+        "enable": true,
+        "scope": []
+      }
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "resources": {
+      "../worker/resona_worker/*.py": "worker/resona_worker/",
+      "../worker/resona_worker/dsp/*.py": "worker/resona_worker/dsp/",
+      "../worker/resona_worker/models/*.py": "worker/resona_worker/models/",
+      "../worker/requirements/*.txt": "worker/requirements/"
+    },
+    "category": "Music",
+    "shortDescription": "AI audio restoration and enhancement",
+    "longDescription": "Resona is a free, open-source desktop app that restores and enhances music, vocals and recordings locally with AI noise reduction, declipping and bandwidth extension.",
+    "license": "MIT",
+    "licenseFile": "../LICENSE",
+    "copyright": "© 2026 Resona contributors",
+    "publisher": "Resona contributors",
+    "homepage": "https://github.com/Layfate/Resona",
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser"
+      }
+    },
+    "macOS": {
+      "minimumSystemVersion": "11.0"
+    },
+    "linux": {
+      "deb": {
+        "section": "sound"
+      }
+    }
+  }
+}

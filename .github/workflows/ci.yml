@@ -1,0 +1,103 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend:
+    name: Frontend (typecheck, lint, unit tests, build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx tsc -b
+      - run: npm run lint
+      - run: npm test
+      - run: npx vite build
+
+  worker:
+    name: Worker (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    env:
+      RESONA_MODELS_DIR: ${{ github.workspace }}/.models
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: worker/requirements/*.txt
+      - run: pip install -r worker/requirements/dev.txt
+      - name: FFmpeg (Linux only — exercises the AAC/ALAC/FFmpeg code paths)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Lint
+        working-directory: worker
+        run: ruff check .
+      - name: Cache models
+        uses: actions/cache@v4
+        with:
+          path: .models
+          key: models-deepfilternet3-c94d91f7
+      - name: Download & verify DeepFilterNet3 (SHA-256 pinned)
+        working-directory: worker
+        run: python -m resona_worker --models-dir "${{ env.RESONA_MODELS_DIR }}" models install deepfilternet3
+      - name: Tests (incl. regression against the official DeepFilterNet output)
+        working-directory: worker
+        run: python -m pytest -q
+      - name: Benchmark
+        working-directory: worker
+        run: python -m resona_worker --models-dir "${{ env.RESONA_MODELS_DIR }}" bench --seconds 30 --device cpu
+
+  rust:
+    name: Backend (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Linux system dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libgtk-3-dev
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Worker environment for the end-to-end queue test
+        shell: bash
+        run: |
+          python -m venv worker/.venv
+          if [ "$RUNNER_OS" = "Windows" ]; then PY=worker/.venv/Scripts/python; else PY=worker/.venv/bin/python; fi
+          $PY -m pip install -r worker/requirements/cpu.txt
+      - name: Frontend dist placeholder
+        shell: bash
+        run: mkdir -p dist && echo '<!doctype html><title>Resona</title>' > dist/index.html
+      - run: cargo fmt --check
+        working-directory: src-tauri
+      - run: cargo clippy --all-targets -- -D warnings
+        working-directory: src-tauri
+      - run: cargo test
+        working-directory: src-tauri

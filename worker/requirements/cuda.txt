@@ -1,0 +1,4 @@
+# NVIDIA GPUs (Windows / Linux x86_64). The CUDA + cuDNN runtimes are installed as pip wheels,
+# so no system-wide CUDA toolkit is required — only a recent NVIDIA driver.
+-r core.txt
+onnxruntime-gpu[cuda,cudnn]>=1.21,<2

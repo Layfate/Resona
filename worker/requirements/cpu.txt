@@ -1,0 +1,3 @@
+# CPU (all platforms). On macOS this build also provides the CoreML execution provider.
+-r core.txt
+onnxruntime>=1.18,<2

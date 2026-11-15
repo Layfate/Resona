@@ -1,0 +1,3 @@
+# Any DirectX 12 GPU on Windows (AMD, Intel, NVIDIA) via DirectML.
+-r core.txt
+onnxruntime-directml>=1.18,<2

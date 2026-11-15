@@ -1,0 +1,77 @@
+name: Release
+
+# Builds installers for every platform and attaches them to a draft GitHub
+# release. Trigger by pushing a tag such as `v0.1.0`, or manually.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Windows x64 (.exe, .msi)
+            os: windows-latest
+            args: ""
+          - name: macOS Apple Silicon (.dmg)
+            os: macos-latest
+            args: --target aarch64-apple-darwin
+          - name: macOS Intel (.dmg)
+            os: macos-latest
+            args: --target x86_64-apple-darwin
+          - name: Linux x64 (.AppImage, .deb, .rpm)
+            os: ubuntu-22.04
+            args: ""
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Linux system dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libgtk-3-dev rpm
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ runner.os == 'macOS' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - run: npm ci
+
+      - name: Remove Python bytecode from bundled worker
+        shell: bash
+        run: find worker/resona_worker -name __pycache__ -type d -prune -exec rm -rf {} +
+
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Optional code signing — configure these secrets to sign builds:
+          # Windows: TAURI_SIGNING_PRIVATE_KEY (updater) / signtool via tauri.conf.json
+          # macOS:   APPLE_CERTIFICATE, APPLE_CERTIFICATE_PASSWORD, APPLE_SIGNING_IDENTITY,
+          #          APPLE_ID, APPLE_PASSWORD, APPLE_TEAM_ID
+        with:
+          tagName: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
+          releaseName: Resona ${{ github.ref_type == 'tag' && github.ref_name || 'nightly' }}
+          releaseBody: |
+            See CHANGELOG.md for what's new. Installers are not code-signed yet:
+            Windows SmartScreen and macOS Gatekeeper will ask for confirmation on first launch.
+            On first start Resona offers to download its AI engine (~100 MB, CPU).
+          releaseDraft: true
+          prerelease: false
+          args: ${{ matrix.args }}

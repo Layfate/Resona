@@ -1,0 +1,23 @@
+# Node / frontend
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Rust / Tauri
+src-tauri/target/
+src-tauri/gen/schemas/
+
+# Python
+__pycache__/
+*.pyc
+worker/.venv/
+.venv/
+.pytest_cache/
+.ruff_cache/
+.models/
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.idea/
+*.swp
